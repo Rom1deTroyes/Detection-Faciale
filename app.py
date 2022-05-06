@@ -57,14 +57,12 @@ def detect_faces(our_image):
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     # Detect faces
     faces = face_cascade.detectMultiScale(gray, 1.1, 4)
-    # Draw rectangle around the faces
-    nb_personnes = len(st.session_state.personnes)
 
+    # Draw rectangle around the faces
     for (x, y, w, h) in faces:
-        nb_personnes += 1
         cv2.rectangle(img, (x, y), (x+w, y+h), color_cadre)
         cv2.rectangle(img, (x, y - hauteur_bandeau), (x + w, y), color_cadre, -1)
-        label = 'Personne {}'.format(nb_personnes)
+        label = f"Personne {len(st.session_state.personnes)+1}"
         cv2.putText(img, label, (x, y - int(hauteur_bandeau/3)), cv2.FONT_HERSHEY_SIMPLEX, .5, color_text)
         add_count(label)
     return img,faces
@@ -74,7 +72,7 @@ def detect_and_predict_mask(frame, faceNet=st.session_state.faceNet, maskNet=st.
     # convert frame to a numpy array
     frame = np.array(frame.convert('RGB'))
     # resize frame
-    frame = imutils.resize(frame, width=400)
+    #frame = imutils.resize(frame, width=400)
     # grab the dimensions of the frame and then construct a blob
     # from it
     (h, w) = frame.shape[:2]
@@ -144,9 +142,9 @@ def detect_and_predict_mask(frame, faceNet=st.session_state.faceNet, maskNet=st.
         color = color_with if state == "Mask" else color_without
 
         # include the probability in the label
-        name = 'ID {}'.format(len(st.session_state.personnes)+1)
+        name = f"Personne {len(st.session_state.personnes)+1}"
         accuracy = max(mask, withoutMask) * 100
-        label = "{:.2f}%".format(accuracy)
+        label = f"{accuracy:.2f}%"
 
         # display the label and bounding box rectangle on the output
         # frame
@@ -158,7 +156,7 @@ def detect_and_predict_mask(frame, faceNet=st.session_state.faceNet, maskNet=st.
         cv2.putText(frame, label, (startX, endY - int(hauteur_bandeau/3)), cv2.FONT_HERSHEY_SIMPLEX, 0.45, color_text, 1)
 
         # add personne to counts
-        add_count(f"Personne {len(st.session_state.personnes)+1}", state, accuracy)
+        add_count(name, state, accuracy)
 
     # return a 2-tuple of the face locations and their corresponding
     # locations
@@ -208,7 +206,7 @@ def main():
             result_img,result_faces = detect_faces(our_image)
             st.image(result_img)
 
-            st.success("Found {} faces".format(len(result_faces)))
+            st.success(f"Found {len(result_faces)} faces")
 
     if choice == 'Mask Detection':
         st.subheader("Mask Detection")
@@ -231,7 +229,7 @@ def main():
             result_img,result_faces = detect_and_predict_mask(our_image)
             st.image(result_img)
 
-            st.success("Found {} faces".format(len(result_faces)))
+            st.success(f"Found {len(result_faces)} faces")
 
 
 
