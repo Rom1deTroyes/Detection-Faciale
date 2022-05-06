@@ -11,6 +11,7 @@ from PIL import Image
 from keras.applications.mobilenet_v2 import preprocess_input
 from keras.models import load_model
 from keras.preprocessing.image import img_to_array
+from webcam import webcam
 
 
 # serialized face detector model from disk
@@ -204,7 +205,7 @@ def main():
     st.title("Face Detection App")
     st.text("Build with Streamlit and OpenCV")
 
-    activities = ["Face Detection", "Mask Detection", "Report", "About"]
+    activities = ["Face Detection", "Mask Detection", "Webcam", "Report", "About"]
     choice = st.sidebar.selectbox("Select Activty",activities)
 
     if choice == 'Face Detection':
@@ -230,7 +231,7 @@ def main():
 
             st.success(f"Found {len(result_faces)} faces")
 
-    if choice == 'Mask Detection':
+    elif choice == 'Mask Detection':
         st.subheader("Mask Detection")
 
         image_file = st.file_uploader("Upload Image",type=['jpg','png','jpeg'])
@@ -254,10 +255,22 @@ def main():
             st.success(f"Found {len(result_faces)} faces")
 
 
+    elif choice == 'Webcam':
+        st.subheader(choice)
+        
+        captured_image = webcam()
+
+        if captured_image is None:
+            st.write("Waiting for capture...")
+        else:
+            result_img,result_faces = detect_and_predict_mask(captured_image)
+            st.image(result_img)
+            st.success(f"Found {len(result_faces)} faces")
+
 
     elif choice == 'Report':
         st.subheader('Report')
-        st.write(st.session_state.personnes)
+        st.table(st.session_state.personnes)
 
     elif choice == 'About':
         st.subheader("About Face Detection App")

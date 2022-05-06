@@ -22,7 +22,7 @@ Il faudra développer une application Streamlit qui sera capable à détecter/lo
 
 Cahier de charge de l’application :
 - [X] Charger une image.
-- [ ] Lancer la webcam (facultatif).
+- [X] Lancer la webcam (facultatif).
 - [X] Détection du masque.
 - [X] Comptage (personne avec masque et personne sans masque).
 - [X] Un historique sous forme un tableau (personne, date/heure de détection et statut).
@@ -66,6 +66,12 @@ L'application a marqué les personnes masquées en vert, et les non masquées en
 
 ![Detection des Masques](./Assets/Masks.png)
 
+### webcam
+
+L'image à analyser est prise par la webcam (à authoriser) :
+
+![Detection depuis la webcam](./Assets/Webcam.png)
+
 ### Historique
 
 L'onglet `Report` permet de visualiser les personnes identifiées depuis le lancement de l'application.
@@ -76,5 +82,4 @@ L'onglet `Report` permet de visualiser les personnes identifiées depuis le lanc
 
 Il reste des axes d'améliorations et des fonctionnalités à implémenter :
 - Séparer la fonction de détection des masques et celle de la detection des visages pour en utiliser qu'une, et les enchaîner
-- Ajouter un flux vidéo pour prendre une image et la traiter
 - Utiliser le flux vidéo pour faire une analyse en continue
