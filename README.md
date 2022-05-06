@@ -11,6 +11,8 @@ author: Mohammed El Amine BECHAR
 
 Transfer learning pour la détection des masques
 
+[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://share.streamlit.io/Rom1deTroyes/Detection-Faciale/)
+
 ## Contexte du projet
 
 Nous cherchons à améliorer l’application qui a été développée lors de dernier Brief.
@@ -19,9 +21,9 @@ Il faudra développer une application Streamlit qui sera capable à détecter/lo
 
 
 Cahier de charge de l’application :
-- [ ] Charger une image.
+- [X] Charger une image.
 - [ ] Lancer la webcam (facultatif).
-- [ ] Détection du masque.
+- [~] Détection du masque.
 - [ ] Comptage (personne avec masque et personne sans masque).
 - [ ] Un historique sous forme un tableau (personne, date/heure de détection et statut).
 
@@ -36,8 +38,8 @@ Le bon fonctionnement de l'Application demandée.
 ## Livrables
 
 Un dépôt GitHub avec :
-- [ ] L'application Streamlit avec les fichiers nécessaires.
+- [~] L'application Streamlit avec les fichiers nécessaires.
 - [ ] Le modèle .h5
-- [ ] Un Readme.md pour mettre en avant votre projet
+- [~] Un Readme.md pour mettre en avant votre projet
 
 
