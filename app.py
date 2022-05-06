@@ -1,6 +1,9 @@
+"""
+A Streamlit app making face and mask detection
+"""
 # Core Pkgs
-import cv2
 import datetime
+import cv2
 import imutils
 import numpy as np
 import pandas as pd
@@ -52,6 +55,11 @@ def add_count(label, state="?", accuracy=None):
     st.session_state.personnes.loc[now] = [label, now.strftime("%x"), now.strftime("%X"), state, accuracy]
 
 def detect_faces(our_image):
+    """Detect faces and tag them
+
+    :our_image: image to analyse
+    :return: taged image and faces
+    """
     new_img = np.array(our_image.convert('RGB'))
     img = cv2.cvtColor(new_img,1)
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -69,6 +77,13 @@ def detect_faces(our_image):
 
 
 def detect_and_predict_mask(frame, face_net=st.session_state.faceNet, mask_net=st.session_state.maskNet):
+    """Detect faces and tag them with or without mask
+
+    :frame: image to analyse
+    :face_net: the prediction model to find faces
+    :mask_net: the prediction model to find masks
+    :return: taged image and predictions
+    """
     # convert frame to a numpy array
     frame = np.array(frame.convert('RGB'))
     # resize frame
