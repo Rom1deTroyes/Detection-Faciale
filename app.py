@@ -4,16 +4,13 @@ A Streamlit app making face and mask detection
 # Core Pkgs
 import datetime
 import cv2
-import imutils
 import numpy as np
 import pandas as pd
 import streamlit as st
-from imutils.video import VideoStream
 from PIL import Image
-from streamlit.state import session_state
-from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
-from tensorflow.keras.models import load_model
-from tensorflow.keras.preprocessing.image import img_to_array
+from keras.applications.mobilenet_v2 import preprocess_input
+from keras.models import load_model
+from keras.preprocessing.image import img_to_array
 
 
 # serialized face detector model from disk
@@ -22,7 +19,8 @@ PROTOTXT_PATH = "./face_detector/deploy.prototxt"
 WEIGHTS_PATH = "./face_detector/res10_300x300_ssd_iter_140000.caffemodel"
 
 CASCADE_PATH = "./cascades/"
-face_cascade = cv2.CascadeClassifier(CASCADE_PATH+'haarcascade_frontalface_default.xml')
+face_cascade = cv2.CascadeClassifier(CASCADE_PATH
+        + 'haarcascade_frontalface_default.xml')
 
 color_cadre = (0, 0, 255)  # La couleur du carré qui entoure le visage détecté
 color_with = (0, 155, 0)  # La couleur du carré qui entoure le visage détecté
@@ -42,7 +40,8 @@ if 'maskNet' not in st.session_state:
 
 # Initialise the report if not present
 if "personnes" not in st.session_state :
-    st.session_state.personnes = pd.DataFrame(columns= ['Personne', 'Date', 'Heure', 'Masque', 'Précision'])
+    st.session_state.personnes = pd.DataFrame(
+            columns= ['Personne', 'Date', 'Heure', 'Masque', 'Précision'])
 
 def add_count(label, state="?", accuracy=None):
     """Add a person label in the personnes counts
@@ -52,7 +51,8 @@ def add_count(label, state="?", accuracy=None):
 
     """
     now = datetime.datetime.now()
-    st.session_state.personnes.loc[now] = [label, now.strftime("%x"), now.strftime("%X"), state, accuracy]
+    st.session_state.personnes.loc[now] = [label, now.strftime("%x"),
+            now.strftime("%X"), state, accuracy]
 
 def detect_faces(our_image):
     """Detect faces and tag them
@@ -68,10 +68,13 @@ def detect_faces(our_image):
 
     # Draw rectangle around the faces
     for (start_x, start_y, stop_x, stop_y) in faces:
-        cv2.rectangle(img, (start_x, start_y), (start_x+stop_x, start_y+stop_y), color_cadre)
-        cv2.rectangle(img, (start_x, start_y - BOX_H), (start_x + stop_x, start_y), color_cadre, -1)
+        cv2.rectangle(img, (start_x, start_y),
+                (start_x+stop_x, start_y+stop_y), color_cadre)
+        cv2.rectangle(img, (start_x, start_y - BOX_H),
+                (start_x + stop_x, start_y), color_cadre, -1)
         label = f"Personne {len(st.session_state.personnes)+1}"
-        cv2.putText(img, label, (start_x, start_y - int(BOX_H/3)), cv2.FONT_HERSHEY_SIMPLEX, .5, color_text)
+        cv2.putText(img, label, (start_x, start_y - int(BOX_H/3)),
+                cv2.FONT_HERSHEY_SIMPLEX, .5, color_text)
         add_count(label)
     return img,faces
 
@@ -165,10 +168,14 @@ def detect_and_predict_mask(frame, face_net=st.session_state.faceNet, mask_net=s
         # frame
 
         cv2.rectangle(frame, (start_x, start_y), (end_x, end_y), color, 1)
-        cv2.rectangle(frame, (start_x, start_y - BOX_H), (end_x, start_y), color, -1)
-        cv2.putText(frame, name, (start_x, start_y - int(BOX_H/3)), cv2.FONT_HERSHEY_SIMPLEX, .5, color_text, 1)
-        cv2.rectangle(frame, (start_x, end_y - BOX_H), (end_x, end_y), color, -1)
-        cv2.putText(frame, label, (start_x, end_y - int(BOX_H/3)), cv2.FONT_HERSHEY_SIMPLEX, 0.45, color_text, 1)
+        cv2.rectangle(frame, (start_x, start_y - BOX_H),
+                (end_x, start_y), color, -1)
+        cv2.putText(frame, name, (start_x, start_y - int(BOX_H/3)),
+                cv2.FONT_HERSHEY_SIMPLEX, .5, color_text, 1)
+        cv2.rectangle(frame, (start_x, end_y - BOX_H),
+                (end_x, end_y), color, -1)
+        cv2.putText(frame, label, (start_x, end_y - int(BOX_H/3)),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.45, color_text, 1)
 
         # add personne to counts
         add_count(name, state, accuracy)
@@ -254,7 +261,7 @@ def main():
 
     elif choice == 'About':
         st.subheader("About Face Detection App")
-        st.markdown("Built with Streamlit by [Rom1deToyes](https://www.github.com/Rom1deTroyes/)")
+        st.markdown("[Rom1deToyes](https://www.github.com/Rom1deTroyes/)")
         st.markdown("With code by [JCharisTech](https://www.jcharistech.com/)")
         st.text("Romain Heller (@Rom1deTroyes)")
 
