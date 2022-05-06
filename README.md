@@ -23,9 +23,9 @@ Il faudra développer une application Streamlit qui sera capable à détecter/lo
 Cahier de charge de l’application :
 - [X] Charger une image.
 - [ ] Lancer la webcam (facultatif).
-- [~] Détection du masque.
-- [ ] Comptage (personne avec masque et personne sans masque).
-- [ ] Un historique sous forme un tableau (personne, date/heure de détection et statut).
+- [X] Détection du masque.
+- [X] Comptage (personne avec masque et personne sans masque).
+- [X] Un historique sous forme un tableau (personne, date/heure de détection et statut).
 
 ## Modalités pédagogiques
 
@@ -38,8 +38,43 @@ Le bon fonctionnement de l'Application demandée.
 ## Livrables
 
 Un dépôt GitHub avec :
-- [~] L'application Streamlit avec les fichiers nécessaires.
-- [ ] Le modèle .h5
-- [~] Un Readme.md pour mettre en avant votre projet
+- [X] L'application Streamlit avec les fichiers nécessaires.
+- [X] Le modèle .h5
+- [X] Un Readme.md pour mettre en avant votre projet
 
+## Fonctionnement de l'application
 
+L'application s'ouvre sur une page permettant la détection des visages.
+
+### Detection des visages
+
+Une image est fournie par défaut, et on peut en choisir une en local.
+
+![Detection des Visages](./Assets/Home.png)
+
+L'application a repéré 3 visages et les a ajouté à la liste des personnes identifiées.
+
+![Detection des Visages](./Assets/Faces.png)
+
+### Détection des masques
+
+L'onglet `Détection des masques` permet de trouver les visages masqués et non masqués :
+
+![Detection des Masques](./Assets/Mask.png)
+
+L'application a marqué les personnes masquées en vert, et les non masquées en rouge, en indicant un indice de confiance dans la prédiction.
+
+![Detection des Masques](./Assets/Masks.png)
+
+### Historique
+
+L'onglet `Report` permet de visualiser les personnes identifiées depuis le lancement de l'application.
+
+![Rapport](./Assets/Report.png)
+
+## Todo
+
+Il reste des axes d'améliorations et des fonctionnalités à implémenter :
+- Séparer la fonction de détection des masques et celle de la detection des visages pour en utiliser qu'une, et les enchaîner
+- Ajouter un flux vidéo pour prendre une image et la traiter
+- Utiliser le flux vidéo pour faire une analyse en continue
