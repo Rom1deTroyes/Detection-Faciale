@@ -22,6 +22,8 @@ cascade_path = "./cascades/"
 face_cascade = cv2.CascadeClassifier(cascade_path+'haarcascade_frontalface_default.xml')
 
 color_cadre = (0, 0, 255)  # La couleur du carré qui entoure le visage détecté
+color_with = (0, 155, 0)  # La couleur du carré qui entoure le visage détecté
+color_without = (255, 0, 0)  # La couleur du carré qui entoure le visage détecté
 hauteur_bandeau = 20  # la hauteur du bandeau
 color_back = (0, 0, 0)  # La couleur de fond du bandeau
 color_text = (255, 255, 255)  # La couleur du texte
@@ -37,9 +39,9 @@ if 'maskNet' not in st.session_state:
 
 # Initialise the report if not present
 if "personnes" not in st.session_state :
-    st.session_state.personnes = pd.DataFrame(columns= ['Personne', 'Date', 'Heure', 'Masque'])
+    st.session_state.personnes = pd.DataFrame(columns= ['Personne', 'Date', 'Heure', 'Masque', 'Précision'])
 
-def add_count(label, state="?"):
+def add_count(label, state="?", accuracy=None):
     """Add a person label in the personnes counts
 
     :label: Label of the person
@@ -47,7 +49,7 @@ def add_count(label, state="?"):
 
     """
     t = datetime.datetime.now()
-    st.session_state.personnes.loc[t] = [label, t.strftime("%x"), t.strftime("%X"), state]
+    st.session_state.personnes.loc[t] = [label, t.strftime("%x"), t.strftime("%X"), state, accuracy]
 
 def detect_faces(our_image):
     new_img = np.array(our_image.convert('RGB'))
@@ -61,7 +63,7 @@ def detect_faces(our_image):
     for (x, y, w, h) in faces:
         nb_personnes += 1
         cv2.rectangle(img, (x, y), (x+w, y+h), color_cadre)
-        cv2.rectangle(img, (x, y - hauteur_bandeau), (x + w, y), color_back, -1)
+        cv2.rectangle(img, (x, y - hauteur_bandeau), (x + w, y), color_cadre, -1)
         label = 'Personne {}'.format(nb_personnes)
         cv2.putText(img, label, (x, y - int(hauteur_bandeau/3)), cv2.FONT_HERSHEY_SIMPLEX, .5, color_text)
         add_count(label)
@@ -138,20 +140,25 @@ def detect_and_predict_mask(frame, faceNet=st.session_state.faceNet, maskNet=st.
 
         # determine the class label and color we'll use to draw
         # the bounding box and text
-        label = "Mask" if mask > withoutMask else "No Mask"
-        color = (0, 255, 0) if label == "Mask" else (0, 0, 255)
+        state = "Mask" if mask > withoutMask else "No Mask"
+        color = color_with if state == "Mask" else color_without
 
         # include the probability in the label
-        label = "{}: {:.2f}%".format(label, max(mask, withoutMask) * 100)
+        name = 'ID {}'.format(len(st.session_state.personnes)+1)
+        accuracy = max(mask, withoutMask) * 100
+        label = "{:.2f}%".format(accuracy)
 
         # display the label and bounding box rectangle on the output
         # frame
-        cv2.putText(frame, label, (startX, startY - 10),
-            cv2.FONT_HERSHEY_SIMPLEX, 0.45, color, 2)
-        cv2.rectangle(frame, (startX, startY), (endX, endY), color, 2)
+
+        cv2.rectangle(frame, (startX, startY), (endX, endY), color, 1)
+        cv2.rectangle(frame, (startX, startY - hauteur_bandeau), (endX, startY), color, -1)
+        cv2.putText(frame, name, (startX, startY - int(hauteur_bandeau/3)), cv2.FONT_HERSHEY_SIMPLEX, .5, color_text, 1)
+        cv2.rectangle(frame, (startX, endY - hauteur_bandeau), (endX, endY), color, -1)
+        cv2.putText(frame, label, (startX, endY - int(hauteur_bandeau/3)), cv2.FONT_HERSHEY_SIMPLEX, 0.45, color_text, 1)
 
         # add personne to counts
-        add_count("Person", label)
+        add_count(f"Personne {len(st.session_state.personnes)+1}", state, accuracy)
 
     # return a 2-tuple of the face locations and their corresponding
     # locations
