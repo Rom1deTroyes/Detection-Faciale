@@ -37,8 +37,17 @@ if 'maskNet' not in st.session_state:
 
 # Initialise the report if not present
 if "personnes" not in st.session_state :
-    st.session_state.personnes = pd.DataFrame(columns= ['Personne', 'Date', 'Heure'])
+    st.session_state.personnes = pd.DataFrame(columns= ['Personne', 'Date', 'Heure', 'Masque'])
 
+def add_count(label, state="?"):
+    """Add a person label in the personnes counts
+
+    :label: Label of the person
+    :returns: None
+
+    """
+    t = datetime.datetime.now()
+    st.session_state.personnes.loc[t] = [label, t.strftime("%x"), t.strftime("%X"), state]
 
 def detect_faces(our_image):
     new_img = np.array(our_image.convert('RGB'))
@@ -55,8 +64,7 @@ def detect_faces(our_image):
         cv2.rectangle(img, (x, y - hauteur_bandeau), (x + w, y), color_back, -1)
         label = 'Personne {}'.format(nb_personnes)
         cv2.putText(img, label, (x, y - int(hauteur_bandeau/3)), cv2.FONT_HERSHEY_SIMPLEX, .5, color_text)
-        t = datetime.datetime.now()
-        st.session_state.personnes.loc[t] = [label, t.strftime("%x"), t.strftime("%X")]
+        add_count(label)
     return img,faces
 
 
@@ -141,6 +149,9 @@ def detect_and_predict_mask(frame, faceNet=st.session_state.faceNet, maskNet=st.
         cv2.putText(frame, label, (startX, startY - 10),
             cv2.FONT_HERSHEY_SIMPLEX, 0.45, color, 2)
         cv2.rectangle(frame, (startX, startY), (endX, endY), color, 2)
+
+        # add personne to counts
+        add_count("Person", label)
 
     # return a 2-tuple of the face locations and their corresponding
     # locations
