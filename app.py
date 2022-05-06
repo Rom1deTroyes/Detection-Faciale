@@ -14,28 +14,28 @@ from tensorflow.keras.preprocessing.image import img_to_array
 
 
 # serialized face detector model from disk
-modelPath = "./mask_detector.model"
-prototxtPath = "./face_detector/deploy.prototxt"
-weightsPath = "./face_detector/res10_300x300_ssd_iter_140000.caffemodel"
+MODEL_PATH = "./mask_detector.model"
+PROTOTXT_PATH = "./face_detector/deploy.prototxt"
+WEIGHTS_PATH = "./face_detector/res10_300x300_ssd_iter_140000.caffemodel"
 
-cascade_path = "./cascades/"
-face_cascade = cv2.CascadeClassifier(cascade_path+'haarcascade_frontalface_default.xml')
+CASCADE_PATH = "./cascades/"
+face_cascade = cv2.CascadeClassifier(CASCADE_PATH+'haarcascade_frontalface_default.xml')
 
 color_cadre = (0, 0, 255)  # La couleur du carré qui entoure le visage détecté
 color_with = (0, 155, 0)  # La couleur du carré qui entoure le visage détecté
 color_without = (255, 0, 0)  # La couleur du carré qui entoure le visage détecté
-hauteur_bandeau = 20  # la hauteur du bandeau
+BOX_H = 20  # la hauteur du bandeau
 color_back = (0, 0, 0)  # La couleur de fond du bandeau
 color_text = (255, 255, 255)  # La couleur du texte
 
 
 # load our serialized face detector model from disk
 if 'faceNet' not in st.session_state:
-    st.session_state.faceNet = cv2.dnn.readNet(prototxtPath, weightsPath)
+    st.session_state.faceNet = cv2.dnn.readNet(PROTOTXT_PATH, WEIGHTS_PATH)
 
 # load the face mask detector model from disk
 if 'maskNet' not in st.session_state:
-    st.session_state.maskNet = load_model(modelPath)
+    st.session_state.maskNet = load_model(MODEL_PATH)
 
 # Initialise the report if not present
 if "personnes" not in st.session_state :
@@ -48,8 +48,8 @@ def add_count(label, state="?", accuracy=None):
     :returns: None
 
     """
-    t = datetime.datetime.now()
-    st.session_state.personnes.loc[t] = [label, t.strftime("%x"), t.strftime("%X"), state, accuracy]
+    now = datetime.datetime.now()
+    st.session_state.personnes.loc[now] = [label, now.strftime("%x"), now.strftime("%X"), state, accuracy]
 
 def detect_faces(our_image):
     new_img = np.array(our_image.convert('RGB'))
@@ -59,29 +59,29 @@ def detect_faces(our_image):
     faces = face_cascade.detectMultiScale(gray, 1.1, 4)
 
     # Draw rectangle around the faces
-    for (x, y, w, h) in faces:
-        cv2.rectangle(img, (x, y), (x+w, y+h), color_cadre)
-        cv2.rectangle(img, (x, y - hauteur_bandeau), (x + w, y), color_cadre, -1)
+    for (start_x, start_y, stop_x, stop_y) in faces:
+        cv2.rectangle(img, (start_x, start_y), (start_x+stop_x, start_y+stop_y), color_cadre)
+        cv2.rectangle(img, (start_x, start_y - BOX_H), (start_x + stop_x, start_y), color_cadre, -1)
         label = f"Personne {len(st.session_state.personnes)+1}"
-        cv2.putText(img, label, (x, y - int(hauteur_bandeau/3)), cv2.FONT_HERSHEY_SIMPLEX, .5, color_text)
+        cv2.putText(img, label, (start_x, start_y - int(BOX_H/3)), cv2.FONT_HERSHEY_SIMPLEX, .5, color_text)
         add_count(label)
     return img,faces
 
 
-def detect_and_predict_mask(frame, faceNet=st.session_state.faceNet, maskNet=st.session_state.maskNet):
+def detect_and_predict_mask(frame, face_net=st.session_state.faceNet, mask_net=st.session_state.maskNet):
     # convert frame to a numpy array
     frame = np.array(frame.convert('RGB'))
     # resize frame
     #frame = imutils.resize(frame, width=400)
     # grab the dimensions of the frame and then construct a blob
     # from it
-    (h, w) = frame.shape[:2]
+    (height, width) = frame.shape[:2]
     blob = cv2.dnn.blobFromImage(frame, 1.0, (224, 224),
         (104.0, 177.0, 123.0))
 
     # pass the blob through the network and obtain the face detections
-    faceNet.setInput(blob)
-    detections = faceNet.forward()
+    face_net.setInput(blob)
+    detections = face_net.forward()
 
     # initialize our list of faces, their corresponding locations,
     # and the list of predictions from our face mask network
@@ -100,17 +100,17 @@ def detect_and_predict_mask(frame, faceNet=st.session_state.faceNet, maskNet=st.
         if confidence > 0.5:
             # compute the (x, y)-coordinates of the bounding box for
             # the object
-            box = detections[0, 0, i, 3:7] * np.array([w, h, w, h])
-            (startX, startY, endX, endY) = box.astype("int")
+            box = detections[0, 0, i, 3:7] * np.array([width, height, width, height])
+            (start_x, start_y, end_x, end_y) = box.astype("int")
 
             # ensure the bounding boxes fall within the dimensions of
             # the frame
-            (startX, startY) = (max(0, startX), max(0, startY))
-            (endX, endY) = (min(w - 1, endX), min(h - 1, endY))
+            (start_x, start_y) = (max(0, start_x), max(0, start_y))
+            (end_x, end_y) = (min(width - 1, end_x), min(height - 1, end_y))
 
             # extract the face ROI, convert it from BGR to RGB channel
             # ordering, resize it to 224x224, and preprocess it
-            face = frame[startY:endY, startX:endX]
+            face = frame[start_y:end_y, start_x:end_x]
             face = cv2.cvtColor(face, cv2.COLOR_BGR2RGB)
             face = cv2.resize(face, (224, 224))
             face = img_to_array(face)
@@ -119,7 +119,7 @@ def detect_and_predict_mask(frame, faceNet=st.session_state.faceNet, maskNet=st.
             # add the face and bounding boxes to their respective
             # lists
             faces.append(face)
-            locs.append((startX, startY, endX, endY))
+            locs.append((start_x, start_y, end_x, end_y))
 
     # only make a predictions if at least one face was detected
     if len(faces) > 0:
@@ -127,33 +127,33 @@ def detect_and_predict_mask(frame, faceNet=st.session_state.faceNet, maskNet=st.
         # faces at the same time rather than one-by-one predictions
         # in the above `for` loop
         faces = np.array(faces, dtype="float32")
-        preds = maskNet.predict(faces, batch_size=32)
+        preds = mask_net.predict(faces, batch_size=32)
 
     # loop over the detected face locations and their corresponding
     # locations
     for (box, pred) in zip(locs, preds):
         # unpack the bounding box and predictions
-        (startX, startY, endX, endY) = box
-        (mask, withoutMask) = pred
+        (start_x, start_y, end_x, end_y) = box
+        (with_mask, without_mask) = pred
 
         # determine the class label and color we'll use to draw
         # the bounding box and text
-        state = "Mask" if mask > withoutMask else "No Mask"
+        state = "Mask" if with_mask > without_mask else "No Mask"
         color = color_with if state == "Mask" else color_without
 
         # include the probability in the label
         name = f"Personne {len(st.session_state.personnes)+1}"
-        accuracy = max(mask, withoutMask) * 100
+        accuracy = max(with_mask, without_mask) * 100
         label = f"{accuracy:.2f}%"
 
         # display the label and bounding box rectangle on the output
         # frame
 
-        cv2.rectangle(frame, (startX, startY), (endX, endY), color, 1)
-        cv2.rectangle(frame, (startX, startY - hauteur_bandeau), (endX, startY), color, -1)
-        cv2.putText(frame, name, (startX, startY - int(hauteur_bandeau/3)), cv2.FONT_HERSHEY_SIMPLEX, .5, color_text, 1)
-        cv2.rectangle(frame, (startX, endY - hauteur_bandeau), (endX, endY), color, -1)
-        cv2.putText(frame, label, (startX, endY - int(hauteur_bandeau/3)), cv2.FONT_HERSHEY_SIMPLEX, 0.45, color_text, 1)
+        cv2.rectangle(frame, (start_x, start_y), (end_x, end_y), color, 1)
+        cv2.rectangle(frame, (start_x, start_y - BOX_H), (end_x, start_y), color, -1)
+        cv2.putText(frame, name, (start_x, start_y - int(BOX_H/3)), cv2.FONT_HERSHEY_SIMPLEX, .5, color_text, 1)
+        cv2.rectangle(frame, (start_x, end_y - BOX_H), (end_x, end_y), color, -1)
+        cv2.putText(frame, label, (start_x, end_y - int(BOX_H/3)), cv2.FONT_HERSHEY_SIMPLEX, 0.45, color_text, 1)
 
         # add personne to counts
         add_count(name, state, accuracy)
