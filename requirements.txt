@@ -8,3 +8,4 @@ scipy==1.8.0
 streamlit==1.8.1
 streamlit-webcam-example==0.1.0
 tensorflow==2.8.0
+webcolors==1.11.1

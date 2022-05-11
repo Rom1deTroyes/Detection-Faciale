@@ -12,10 +12,16 @@ from keras.applications.mobilenet_v2 import preprocess_input
 from keras.models import load_model
 from keras.preprocessing.image import img_to_array
 from webcam import webcam
+from webcolors import hex_to_rgb, rgb_to_hex
 
 
 # serialized face detector model from disk
-MODEL_PATH = "./mask_detector.model"
+face_net_models = {'faceNet': './mask_detector.model'}
+if 'MODEL_PATH' not in st.session_state:
+    st.session_state.MODEL_PATH = "./mask_detector.model"  # Model in h5 format
+
+mask_models = {'face_detector': './face_detector/'}
+
 PROTOTXT_PATH = "./face_detector/deploy.prototxt"
 WEIGHTS_PATH = "./face_detector/res10_300x300_ssd_iter_140000.caffemodel"
 
@@ -23,12 +29,19 @@ CASCADE_PATH = "./cascades/"
 face_cascade = cv2.CascadeClassifier(CASCADE_PATH
         + 'haarcascade_frontalface_default.xml')
 
-color_cadre = (0, 0, 255)  # La couleur du carré qui entoure le visage détecté
-color_with = (0, 155, 0)  # La couleur du carré qui entoure le visage détecté
-color_without = (255, 0, 0)  # La couleur du carré qui entoure le visage détecté
+if 'color_cadre' not in st.session_state:
+    st.session_state.color_cadre = (0, 0, 255)  # La couleur du carré qui entoure le visage détecté
+if 'color_text' not in st.session_state:
+    st.session_state.color_text = (255, 255, 255)  # La couleur du texte
+if 'color_with' not in st.session_state:
+    st.session_state.color_with = (0, 155, 0)  # La couleur du carré qui entoure le visage détecté
+if 'color_without' not in st.session_state:
+    st.session_state.color_without = (255, 0, 0)  # La couleur du carré qui entoure le visage détecté
+if 'color_text_with' not in st.session_state:
+    st.session_state.color_text_with = (255, 255, 255)  # La couleur du texte
+if 'color_text_without' not in st.session_state:
+    st.session_state.color_text_without = (255, 255, 255)  # La couleur du texte
 BOX_H = 20  # la hauteur du bandeau
-color_back = (0, 0, 0)  # La couleur de fond du bandeau
-color_text = (255, 255, 255)  # La couleur du texte
 
 
 # load our serialized face detector model from disk
@@ -55,6 +68,28 @@ def add_count(label, state="?", accuracy=None):
     st.session_state.personnes.loc[now] = [label, now.strftime("%x"),
             now.strftime("%X"), state, accuracy]
 
+
+def tag_face(img, face, text, color_cadre, color_text):
+    """ Tag the face with a rectangle and text
+
+    :img: image to modify
+    :face: rectangle to draw
+    :text: text to write
+    :color: color of the rectangle
+    :returns: the image with labeled face
+
+    """
+    start_x, start_y, stop_x, stop_y = face
+    cv2.rectangle(img, (start_x, start_y),
+            (start_x+stop_x, start_y+stop_y), color_cadre)
+    cv2.rectangle(img, (start_x, start_y - BOX_H),
+            (start_x + stop_x, start_y), color_cadre, -1)
+    cv2.putText(img, text, (start_x, start_y - int(BOX_H/3)),
+            cv2.FONT_HERSHEY_SIMPLEX, .5, color_text)
+    add_count(text)
+    return img
+
+
 def detect_faces(our_image):
     """Detect faces and tag them
 
@@ -68,19 +103,14 @@ def detect_faces(our_image):
     faces = face_cascade.detectMultiScale(gray, 1.1, 4)
 
     # Draw rectangle around the faces
-    for (start_x, start_y, stop_x, stop_y) in faces:
-        cv2.rectangle(img, (start_x, start_y),
-                (start_x+stop_x, start_y+stop_y), color_cadre)
-        cv2.rectangle(img, (start_x, start_y - BOX_H),
-                (start_x + stop_x, start_y), color_cadre, -1)
+    for face in faces:
         label = f"Personne {len(st.session_state.personnes)+1}"
-        cv2.putText(img, label, (start_x, start_y - int(BOX_H/3)),
-                cv2.FONT_HERSHEY_SIMPLEX, .5, color_text)
-        add_count(label)
+        tag_face(img, face, label, color_cadre, st.session_state.color_text)
+
     return img,faces
 
 
-def detect_and_predict_mask(frame, face_net=st.session_state.faceNet, mask_net=st.session_state.maskNet):
+def detect_and_predict_mask(frame, face_net=st.session_state.faceNet, mask_net=st.session_state.mask_model):
     """Detect faces and tag them with or without mask
 
     :frame: image to analyse
@@ -158,7 +188,8 @@ def detect_and_predict_mask(frame, face_net=st.session_state.faceNet, mask_net=s
         # determine the class label and color we'll use to draw
         # the bounding box and text
         state = "Mask" if with_mask > without_mask else "No Mask"
-        color = color_with if state == "Mask" else color_without
+        color = st.session_state.color_with if state == "Mask" else st.session_state.color_without
+        color_text = st.session_state.color_text_with if state == "Mask" else st.session_state.color_text_without
 
         # include the probability in the label
         name = f"Personne {len(st.session_state.personnes)+1}"
@@ -203,9 +234,9 @@ def main():
     """Face Detection App"""
 
     st.title("Face Detection App")
-    st.text("Build with Streamlit and OpenCV")
+    st.text("An application to detect faces and tag them with or without masks")
 
-    activities = ["Face Detection", "Mask Detection", "Webcam", "Report", "About"]
+    activities = ["Face Detection", "Mask Detection", "Webcam", "Report", "Settings", "About"]
     choice = st.sidebar.selectbox("Select Activty",activities)
 
     if choice == 'Face Detection':
@@ -271,6 +302,28 @@ def main():
     elif choice == 'Report':
         st.subheader('Report')
         st.table(st.session_state.personnes)
+
+
+    elif choice == 'Settings':
+        st.subheader('Settings')
+        
+        with st.expander("Taging Colors"):
+            col1, col2, col3 = st.columns(3)
+
+            with col1:
+                st.header("General")
+                st.session_state.color_text = hex_to_rgb(st.color_picker("Text", rgb_to_hex(st.session_state.color_text)))
+                st.session_state.color_cadre = hex_to_rgb(st.color_picker("Background", rgb_to_hex(st.session_state.color_cadre)))
+
+            with col2:
+                st.header("Without Mask")
+                st.session_state.color_text_without = hex_to_rgb(st.color_picker("Text Without", rgb_to_hex(st.session_state.color_text_without)))
+                st.session_state.color_without = hex_to_rgb(st.color_picker("Background Without", rgb_to_hex(st.session_state.color_without)))
+
+            with col3:
+                st.header("With Mask")
+                st.session_state.color_text_with = hex_to_rgb(st.color_picker("Text With", rgb_to_hex(st.session_state.color_text_with)))
+                st.session_state.color_with = hex_to_rgb(st.color_picker("Background With", rgb_to_hex(st.session_state.color_with)))
 
     elif choice == 'About':
         st.subheader("About Face Detection App")
