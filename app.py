@@ -50,7 +50,7 @@ if 'faceNet' not in st.session_state:
 
 # load the face mask detector model from disk
 if 'maskNet' not in st.session_state:
-    st.session_state.maskNet = load_model(MODEL_PATH)
+    st.session_state.maskNet = load_model(st.session_state.MODEL_PATH)
 
 # Initialise the report if not present
 if "personnes" not in st.session_state :
